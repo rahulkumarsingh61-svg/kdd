@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniAI Studio</title>
+    <title>OmniAI Studio Pro</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Marked.js for Markdown rendering -->
+    <!-- Marked.js for Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -14,15 +14,37 @@
         .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); }
         .chat-container::-webkit-scrollbar { width: 6px; }
         .chat-container::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 4px; }
-        .message-content pre { background: #0f172a; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-top: 0.5rem; }
-        .message-content code { font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+        
+        /* Code block wrapper with copy button */
+        .code-wrapper { position: relative; margin-top: 0.75rem; margin-bottom: 0.75rem; border-radius: 0.5rem; overflow: hidden; background: #0b1120; border: 1px solid #1e293b; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 0.35rem 0.75rem; font-size: 0.7rem; color: #94a3b8; font-family: monospace; border-bottom: 1px solid #1e293b; }
+        .code-copy-btn { background: #1e293b; color: #cbd5e1; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; transition: all 0.2s; cursor: pointer; }
+        .code-copy-btn:hover { background: #334155; color: white; }
+        .message-content pre { margin: 0; padding: 0.85rem; overflow-x: auto; font-family: monospace; font-size: 0.82rem; }
+        .message-content code { font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.82rem; }
         .message-content pre code { background: transparent; padding: 0; }
+
         @keyframes pulse-ring {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
         }
-        .listening { animation: pulse-ring 1.5s infinite; background-color: #ef4444 !important; }
+        .listening { animation: pulse-ring 1.5s infinite; background-color: #ef4444 !important; border-color: #f87171 !important; color: white !important; }
+
+        /* Audio Waveform Bars */
+        .wave-bar {
+            width: 3px;
+            background: #818cf8;
+            border-radius: 2px;
+            animation: bounce 0.6s ease-in-out infinite alternate;
+        }
+        .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.45s; }
+        @keyframes bounce {
+            0% { height: 4px; }
+            100% { height: 16px; }
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 h-screen flex flex-col justify-between overflow-hidden">
@@ -35,23 +57,36 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg tracking-tight text-white flex items-center gap-2">
-                    OmniAI Studio 
+                    OmniAI Studio
                     <span id="statusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Locked</span>
                     <span id="deviceBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Device Offline</span>
                 </h1>
-                <p class="text-xs text-slate-400">Say or type "Hello Omni" to unlock</p>
+                <p id="subStatus" class="text-xs text-slate-400">Say or type "Hello Omni" to unlock</p>
             </div>
         </div>
 
         <div class="flex items-center space-x-2">
+            <!-- Audio Activity Visualizer -->
+            <div id="audioWave" class="hidden items-center gap-0.5 h-5 px-2 bg-slate-900 border border-slate-800 rounded-lg">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+
             <!-- Connect to Device Button -->
             <button id="connectDeviceBtn" onclick="toggleDeviceConnection()" class="text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-2 rounded-lg transition shadow-md shadow-emerald-600/20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 <span id="connectDeviceLabel">Connect to Device</span>
             </button>
 
+            <!-- Stop Generation Button (Dynamic) -->
+            <button id="stopBtn" onclick="stopGeneration()" class="hidden text-xs bg-rose-600/80 hover:bg-rose-500 text-white px-3 py-2 rounded-lg transition border border-rose-500/40">
+                Stop ⏹
+            </button>
+
             <select id="modelSelect" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-300 focus:outline-none focus:border-indigo-500">
-                <option value="openrouter/free">OpenRouter Free Auto-Router (Best)</option>
+                <option value="openrouter/free">OpenRouter Auto Free</option>
                 <option value="deepseek/deepseek-r1:free">DeepSeek R1 Free</option>
                 <option value="google/gemma-2-9b-it:free">Google Gemma 2 Free</option>
             </select>
@@ -65,7 +100,7 @@
             <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">AI</div>
             <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg">
                 <p class="font-semibold text-indigo-400 mb-1">Security Check Required 🔒</p>
-                <p>Welcome to OmniAI Studio! This assistant is currently locked. To activate it, type or speak <strong>"Hello Omni"</strong>, or click <strong>"Connect to Device"</strong> above.</p>
+                <p>Welcome to OmniAI Studio Pro! This assistant is locked. Type or say <strong>"Hello Omni"</strong>, or click <strong>"Connect to Device"</strong> to unlock real-time streaming control.</p>
             </div>
         </div>
     </main>
@@ -73,7 +108,7 @@
     <!-- Input Bar -->
     <footer class="glass border-t border-slate-800 p-4 z-10">
         <div class="max-w-4xl mx-auto flex items-center space-x-3">
-            <button id="micBtn" onclick="toggleSpeechRecognition()" title="Speak to activate or chat" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-3 rounded-xl transition flex items-center justify-center border border-slate-700 flex-shrink-0">
+            <button id="micBtn" onclick="toggleSpeechRecognition()" title="Speak to chat" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-3 rounded-xl transition flex items-center justify-center border border-slate-700 flex-shrink-0">
                 <svg id="micIcon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
             </button>
             <textarea id="userInput" rows="1" placeholder="Type 'Hello Omni' to activate..." 
@@ -86,24 +121,28 @@
     </footer>
 
     <script>
-        const API_KEY = "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";
+        // ================= CONFIGURATION =================
+        const API_KEY = "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";
         const API_URL = "https://openrouter.ai/api/v1/chat/completions";
-        
+        const MAX_HISTORY = 10; // Memory cap to prevent token overflow
+        // =================================================
+
         let isActivated = false;
         let isDeviceConnected = false;
         let localBridgeSocket = null;
         let continuousListening = false;
         let recognition = null;
+        let isSpeaking = false;
+        let abortController = null;
 
         let conversationHistory = [
             { 
                 role: "system", 
-                content: "Your name is Omni. You were created by Vedant. Always answer accurately in whatever language the user speaks. If anyone asks 'Who created you?', reply exactly 'I am created by Vedant.'. If anyone asks 'Who are you?', reply exactly 'I am Omni'." 
+                content: "Your name is Omni. You were created by Vedant. Provide concise, clear, and natural answers. Avoid unnecessary markdown syntax or command slashes. If anyone asks 'Who created you?', reply exactly 'I am created by Vedant.'. If anyone asks 'Who are you?', reply exactly 'I am Omni'." 
             }
         ];
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Restore persistent connection from local storage
             if (localStorage.getItem('omni_device_connected') === 'true') {
                 connectDevice(false);
             }
@@ -133,31 +172,27 @@
             isDeviceConnected = true;
             localStorage.setItem('omni_device_connected', 'true');
 
-            // Auto-unlock AI when device connects
             isActivated = true;
             document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
             document.getElementById('statusBadge').innerText = "Active ✨";
-            document.getElementById('userInput').placeholder = "Device connected! Speak or type your request...";
+            document.getElementById('subStatus').innerText = "Continuous voice listening active";
+            document.getElementById('userInput').placeholder = "Listening... Say a command or query...";
 
-            // Update Connection button
             const btn = document.getElementById('connectDeviceBtn');
             btn.className = "text-xs flex items-center gap-1.5 bg-red-600/80 hover:bg-red-500 text-white font-medium px-3 py-2 rounded-lg transition border border-red-500/40";
             document.getElementById('connectDeviceLabel').innerText = "Disconnect Device";
 
-            // Update Device badge
             const badge = document.getElementById('deviceBadge');
             badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
             badge.innerText = "Device Linked 🟢";
 
-            // Establish Local Bridge Socket (for native OS commands like opening Notepad, Shutting Down)
             initLocalBridgeSocket();
 
             if (userInitiated) {
-                appendSystemAlert("Omni AI is connected now. Device link is permanently active until disconnected. Continuous listening is enabled.");
-                speakText("Omni AI is connected to your device now. I am listening for your commands.");
+                appendSystemAlert("Omni AI linked to device. Continuous background voice & command listening active.");
+                speakText("Omni AI is connected to your device. I am ready for your commands.");
             }
 
-            // Start hands-free voice loop
             continuousListening = true;
             startSpeechLoop();
         }
@@ -166,6 +201,8 @@
             isDeviceConnected = false;
             continuousListening = false;
             localStorage.removeItem('omni_device_connected');
+
+            stopGeneration();
 
             if (recognition) {
                 try { recognition.stop(); } catch(e) {}
@@ -176,7 +213,6 @@
                 localBridgeSocket = null;
             }
 
-            // Reset UI
             const btn = document.getElementById('connectDeviceBtn');
             btn.className = "text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-2 rounded-lg transition shadow-md shadow-emerald-600/20";
             document.getElementById('connectDeviceLabel').innerText = "Connect to Device";
@@ -184,22 +220,17 @@
             const badge = document.getElementById('deviceBadge');
             badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700";
             badge.innerText = "Device Offline";
+            document.getElementById('subStatus').innerText = "Say or type 'Hello Omni' to unlock";
 
-            appendSystemAlert("Omni AI has been disconnected from your device.");
+            appendSystemAlert("Omni AI disconnected from device.");
             speakText("Device disconnected.");
         }
 
         function initLocalBridgeSocket() {
             try {
-                // Connects to an optional local agent running at ws://localhost:9876
                 localBridgeSocket = new WebSocket("ws://localhost:9876");
-                localBridgeSocket.onopen = () => {
-                    console.log("Connected to native OS companion bridge.");
-                };
-                localBridgeSocket.onerror = () => {
-                    // Normal in pure browser environment
-                    console.log("No native desktop daemon running on ws://localhost:9876. Using browser-level fallbacks.");
-                };
+                localBridgeSocket.onopen = () => console.log("Connected to native OS bridge.");
+                localBridgeSocket.onerror = () => console.log("No OS companion daemon on ws://localhost:9876. Using browser fallbacks.");
             } catch (err) {
                 console.log("Bridge socket unavailable:", err);
             }
@@ -212,7 +243,7 @@
             alertBubble.innerHTML = `
                 <div class="h-9 w-9 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">⚡</div>
                 <div class="glass border border-emerald-500/40 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg text-emerald-300">
-                    \${escapeHtml(text)}
+                    ${escapeHtml(text)}
                 </div>
             `;
             chatContainer.appendChild(alertBubble);
@@ -220,6 +251,7 @@
         }
 
         function clearChat() {
+            stopGeneration();
             isActivated = false;
             document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30";
             document.getElementById('statusBadge').innerText = "Locked";
@@ -231,45 +263,57 @@
                     <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">AI</div>
                     <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg">
                         <p class="font-semibold text-indigo-400 mb-1">Security Check Required 🔒</p>
-                        <p>Assistant reset. Type or speak <strong>"Hello Omni"</strong> to activate, or connect to device.</p>
+                        <p>Assistant reset. Type or speak <strong>"Hello Omni"</strong> to activate, or connect to your device.</p>
                     </div>
                 </div>`;
         }
 
-        // Voice Recognition
+        // ================= VOICE LISTENING =================
         function startSpeechLoop() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
+            if (recognition) {
+                try { recognition.abort(); } catch(e) {}
+            }
+
             recognition = new SpeechRecognition();
             recognition.lang = 'en-US';
             recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
 
             const micBtn = document.getElementById('micBtn');
 
             recognition.onstart = () => {
                 micBtn.classList.add('listening');
+                setAudioWave(true);
             };
 
             recognition.onresult = (event) => {
-                const speechToText = event.results[0][0].transcript;
-                document.getElementById('userInput').value = speechToText;
-                autoResize(document.getElementById('userInput'));
-                micBtn.classList.remove('listening');
-                sendMessage();
+                if (isSpeaking) return;
+
+                const speechToText = event.results[0][0].transcript.trim();
+                if (speechToText.length > 0) {
+                    document.getElementById('userInput').value = speechToText;
+                    autoResize(document.getElementById('userInput'));
+                    micBtn.classList.remove('listening');
+                    setAudioWave(false);
+                    sendMessage();
+                }
             };
 
             recognition.onerror = () => {
                 micBtn.classList.remove('listening');
+                setAudioWave(false);
             };
 
             recognition.onend = () => {
                 micBtn.classList.remove('listening');
-                // If device remains connected, restart listening for persistent hands-free control
-                if (continuousListening && isDeviceConnected) {
+                setAudioWave(false);
+                if (continuousListening && isDeviceConnected && !isSpeaking) {
                     setTimeout(() => {
                         try { recognition.start(); } catch(e) {}
-                    }, 800);
+                    }, 400);
                 }
             };
 
@@ -280,38 +324,100 @@
             if (continuousListening) {
                 continuousListening = false;
                 if (recognition) recognition.stop();
+                document.getElementById('micBtn').classList.remove('listening');
+                setAudioWave(false);
                 return;
             }
+            continuousListening = true;
             startSpeechLoop();
         }
 
-        function speakText(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const cleanText = text.replace(/[*#_`]/g, '');
-                const utterance = new SpeechSynthesisUtterance(cleanText);
-                utterance.rate = 1.0;
-                window.speechSynthesis.speak(utterance);
+        function setAudioWave(visible) {
+            const wave = document.getElementById('audioWave');
+            if (visible) {
+                wave.classList.remove('hidden');
+                wave.classList.add('flex');
+            } else {
+                wave.classList.add('hidden');
+                wave.classList.remove('flex');
             }
         }
 
-        // Handle Device Command Execution
+        function cleanTextForSpeech(raw) {
+            return raw
+                .replace(/```[\s\S]*?```/g, 'code snippet')
+                .replace(/`([^`]+)`/g, '\$1')
+                .replace(/https?:\/\/\S+/g, 'link')
+                .replace(/[#*_~>]/g, '')
+                .replace(/[-–—/\\|]/g, ' ')
+                .replace(/[[\](){}]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel();
+            const cleanText = cleanTextForSpeech(text);
+            if (!cleanText) return;
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.rate = 1.0;
+
+            isSpeaking = true;
+            setAudioWave(true);
+            if (recognition) {
+                try { recognition.abort(); } catch(e) {}
+            }
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                setAudioWave(false);
+                if (continuousListening && isDeviceConnected) {
+                    setTimeout(() => startSpeechLoop(), 300);
+                }
+            };
+
+            utterance.onerror = () => {
+                isSpeaking = false;
+                setAudioWave(false);
+                if (continuousListening && isDeviceConnected) {
+                    setTimeout(() => startSpeechLoop(), 300);
+                }
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function stopGeneration() {
+            if (abortController) {
+                abortController.abort();
+                abortController = null;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            isSpeaking = false;
+            setAudioWave(false);
+            document.getElementById('stopBtn').classList.add('hidden');
+            document.getElementById('sendBtn').disabled = false;
+        }
+
+        // ================= DEVICE COMMAND HANDLER =================
         function handleDeviceCommand(rawText) {
             const cmd = rawText.toLowerCase().trim();
 
-            // Forward to native bridge if present
             if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
                 localBridgeSocket.send(JSON.stringify({ action: "execute", command: cmd }));
             }
 
-            // Browser-executable controls
             if (cmd.includes("open notepad")) {
                 if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
-                    return "Opening Notepad on your computer via local bridge.";
+                    return "Opening Notepad on your computer.";
                 }
-                // Browser alternative: open an in-browser notepad
                 window.open("https://notepad.new", "_blank");
-                return "Browser security restricts launching local .exe directly without a native helper. Opened an online notepad tab for you!";
+                return "Opening online notepad in a new tab.";
             }
 
             if (cmd.includes("open google")) {
@@ -326,17 +432,56 @@
 
             if (cmd.includes("close the computer") || cmd.includes("shutdown") || cmd.includes("turn off pc")) {
                 if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
-                    return "Shutdown command dispatched to your PC via local daemon.";
+                    return "Shutdown command dispatched to your system.";
                 }
-                return "Browsers cannot directly shut down your PC due to operating system sandbox restrictions. Run the accompanying local bridge script to enable OS-level shutdown.";
+                return "Browser security restricts OS-level shutdown without a native companion script.";
             }
 
-            return null; // Not a direct device command; proceed to LLM
+            return null;
         }
 
+        // Format Markdown and add Copy Code blocks
+        function formatMarkdown(content) {
+            let html = marked.parse(content);
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            doc.querySelectorAll('pre').forEach((pre, idx) => {
+                const code = pre.querySelector('code');
+                const codeText = code ? code.innerText : pre.innerText;
+                const langMatch = code ? code.className.match(/language-(\w+)/) : null;
+                const lang = langMatch ? langMatch[1] : 'code';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                wrapper.innerHTML = `
+                    <div class="code-header">
+                        <span>${lang}</span>
+                        <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
+                    </div>
+                `;
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+            });
+
+            return doc.body.innerHTML;
+        }
+
+        function copySnippet(button) {
+            const wrapper = button.closest('.code-wrapper');
+            const pre = wrapper.querySelector('pre');
+            const code = pre.querySelector('code') || pre;
+            navigator.clipboard.writeText(code.innerText).then(() => {
+                button.innerText = "Copied!";
+                setTimeout(() => button.innerText = "Copy", 2000);
+            });
+        }
+
+        // ================= REAL-TIME STREAMING API FLOW =================
         async function sendMessage() {
             const inputField = document.getElementById('userInput');
             const sendBtn = document.getElementById('sendBtn');
+            const stopBtn = document.getElementById('stopBtn');
             const chatContainer = document.getElementById('chatContainer');
             const modelSelect = document.getElementById('modelSelect').value;
             
@@ -348,26 +493,26 @@
 
             // Activation Check
             if (!isActivated) {
-                if (text.toLowerCase().includes("hello omni")) {
+                if (text.toLowerCase().includes("hello omni") || text.toLowerCase().includes("hey omni")) {
                     isActivated = true;
                     document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
                     document.getElementById('statusBadge').innerText = "Active ✨";
-                    document.getElementById('userInput').placeholder = "Type message in any language...";
+                    document.getElementById('userInput').placeholder = "Type or speak in any language...";
 
                     appendUserBubble(chatContainer, text);
-                    appendAiResponse(chatContainer, "Activation successful! 🚀 OmniAI Studio is now active and ready for your queries.");
+                    appendAiResponse(chatContainer, "Activation successful! 🚀 OmniAI Studio is now unlocked.");
                     speakText("Activation successful. OmniAI Studio is now online.");
                     return;
                 } else {
                     appendUserBubble(chatContainer, text);
-                    appendAiResponse(chatContainer, "⚠️ Please type or speak 'Hello Omni' (or click 'Connect to Device') to activate the AI.");
+                    appendAiResponse(chatContainer, "⚠️ Please say or type 'Hello Omni' (or click 'Connect to Device') to unlock.");
                     return;
                 }
             }
 
             appendUserBubble(chatContainer, text);
 
-            // 1. Check if it's a device command while connected
+            // 1. Device Command Handling
             if (isDeviceConnected) {
                 const deviceResponse = handleDeviceCommand(text);
                 if (deviceResponse) {
@@ -377,7 +522,7 @@
                 }
             }
 
-            // 2. Identity Rule Checks
+            // 2. Identity Check
             const lowerInput = text.toLowerCase().trim().replace(/[?!.,]/g, '');
             if (lowerInput === "who created you" || lowerInput === "who made you") {
                 const customReply = "I am created by Vedant.";
@@ -395,9 +540,13 @@
                 return;
             }
 
-            // 3. Normal API Query
+            // 3. Conversation Memory Pruning (Token Saver)
             conversationHistory.push({ role: "user", content: text });
+            if (conversationHistory.length > MAX_HISTORY + 1) {
+                conversationHistory = [conversationHistory[0], ...conversationHistory.slice(-MAX_HISTORY)];
+            }
 
+            // Streaming Bubble Container
             const aiBubbleId = 'ai-msg-' + Date.now();
             const aiBubble = document.createElement('div');
             aiBubble.className = "flex items-start space-x-4";
@@ -411,6 +560,10 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             sendBtn.disabled = true;
+            stopBtn.classList.remove('hidden');
+
+            abortController = new AbortController();
+            let accumulatedReply = "";
 
             try {
                 const response = await fetch(API_URL, {
@@ -423,32 +576,63 @@
                     },
                     body: JSON.stringify({
                         model: modelSelect,
-                        messages: conversationHistory
-                    })
+                        messages: conversationHistory,
+                        stream: true
+                    }),
+                    signal: abortController.signal
                 });
 
-                const data = await response.json();
-                let reply = "";
-                if (data.choices && data.choices[0]) {
-                    if (data.choices[0].message && data.choices[0].message.content) {
-                        reply = data.choices[0].message.content;
-                    } else if (data.choices[0].delta && data.choices[0].delta.content) {
-                        reply = data.choices[0].delta.content;
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error?.message || `HTTP ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                const targetDiv = document.getElementById(aiBubbleId);
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split("\n");
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (trimmed.startsWith("data: ")) {
+                            const dataPayload = trimmed.replace("data: ", "").trim();
+                            if (dataPayload === "[DONE]") continue;
+
+                            try {
+                                const parsed = JSON.parse(dataPayload);
+                                const token = parsed.choices?.[0]?.delta?.content || "";
+                                if (token) {
+                                    accumulatedReply += token;
+                                    targetDiv.innerHTML = formatMarkdown(accumulatedReply);
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                            } catch (e) {
+                                // Ignore partial SSE chunk parses
+                            }
+                        }
                     }
                 }
 
-                if (reply) {
-                    conversationHistory.push({ role: "assistant", content: reply });
-                    document.getElementById(aiBubbleId).innerHTML = marked.parse(reply);
-                    speakText(reply);
-                } else if (data.error) {
-                    document.getElementById(aiBubbleId).innerHTML = `<span class="text-red-400">API Error: ${escapeHtml(data.error.message || JSON.stringify(data.error))}</span>`;
+                if (accumulatedReply) {
+                    conversationHistory.push({ role: "assistant", content: accumulatedReply });
+                    speakText(accumulatedReply);
                 }
             } catch (error) {
-                console.error(error);
-                document.getElementById(aiBubbleId).innerHTML = `<span class="text-red-400">Connection Error. Check network or API quota.</span>`;
+                if (error.name === 'AbortError') {
+                    document.getElementById(aiBubbleId).innerHTML += `<p class="text-xs text-slate-500 italic mt-2">[Generation stopped by user]</p>`;
+                } else {
+                    document.getElementById(aiBubbleId).innerHTML = `<span class="text-red-400">Error: ${escapeHtml(error.message)}</span>`;
+                }
             } finally {
                 sendBtn.disabled = false;
+                stopBtn.classList.add('hidden');
+                abortController = null;
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
         }
@@ -463,7 +647,7 @@
                 <div class="h-9 w-9 rounded-full bg-slate-700 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">You</div>
             `;
             container.appendChild(userBubble);
-            container.scrollTop = container.scrollHeight;
+            container.scrollTop = chatContainer.scrollHeight;
         }
 
         function appendAiResponse(container, text) {
@@ -472,11 +656,11 @@
             aiBubble.innerHTML = `
                 <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">AI</div>
                 <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg message-content text-slate-100">
-                    ${escapeHtml(text)}
+                    ${formatMarkdown(text)}
                 </div>
             `;
             container.appendChild(aiBubble);
-            container.scrollTop = container.scrollHeight;
+            container.scrollTop = chatContainer.scrollHeight;
         }
 
         function escapeHtml(text) {
