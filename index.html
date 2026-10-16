@@ -250,8 +250,7 @@
   </div>
 
   <script>
-    // Live Render URL from your deployment
-    const BACKEND_URL = "https://omni-backend-2c57.onrender.com";
+    const OPENROUTER_API_KEY = "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";
 
     const widget = document.getElementById("omni-widget");
     const messagesContainer = document.getElementById("messages-container");
@@ -290,21 +289,47 @@
       appendMessage(text, "user");
       userInput.value = "";
 
+      const clean = text.toLowerCase();
+      if (clean.includes("who created you")) {
+        const reply = "I was created by Vedant.";
+        appendMessage(reply, "omni");
+        speakText(reply);
+        return;
+      }
+      if (clean.includes("who are you")) {
+        const reply = "I am Omni, your 24/7 AI assistant.";
+        appendMessage(reply, "omni");
+        speakText(reply);
+        return;
+      }
+
       const thinkingMsg = appendMessage("Thinking...", "omni");
 
       try {
-        const response = await fetch(`${BACKEND_URL}/chat`, {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text })
+          headers: {
+            "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "meta-llama/llama-3.2-3b-instruct:free",
+            messages: [
+              {
+                role: "system",
+                content: "Your name is Omni, created by Vedant. Answer questions clearly, accurately, and politely in 1 to 2 sentences. Do not use markdown formatting."
+              },
+              { role: "user", content: text }
+            ]
+          })
         });
 
         const data = await response.json();
-        const reply = data.reply || "No response received.";
+        const reply = data.choices?.[0]?.message?.content || "Sorry, I could not generate a response.";
         thinkingMsg.textContent = reply;
         speakText(reply);
       } catch (err) {
-        thinkingMsg.textContent = "Error communicating with Omni server.";
+        thinkingMsg.textContent = "Error connecting to AI service.";
       }
     }
 
@@ -314,7 +339,7 @@
       }
     }
 
-    // Voice recognition using Web Speech API
+    // Voice recognition
     let recognition = null;
     let isListening = false;
 
