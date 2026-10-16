@@ -1,671 +1,471 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniAI Studio Pro</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Marked.js for Markdown -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); }
-        .chat-container::-webkit-scrollbar { width: 6px; }
-        .chat-container::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 4px; }
-        
-        /* Code block wrapper with copy button */
-        .code-wrapper { position: relative; margin-top: 0.75rem; margin-bottom: 0.75rem; border-radius: 0.5rem; overflow: hidden; background: #0b1120; border: 1px solid #1e293b; }
-        .code-header { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 0.35rem 0.75rem; font-size: 0.7rem; color: #94a3b8; font-family: monospace; border-bottom: 1px solid #1e293b; }
-        .code-copy-btn { background: #1e293b; color: #cbd5e1; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; transition: all 0.2s; cursor: pointer; }
-        .code-copy-btn:hover { background: #334155; color: white; }
-        .message-content pre { margin: 0; padding: 0.85rem; overflow-x: auto; font-family: monospace; font-size: 0.82rem; }
-        .message-content code { font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.82rem; }
-        .message-content pre code { background: transparent; padding: 0; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vedant | Home & Omni Assistant</title>
+  
+  <style>
+    /* ================= BASE PAGE STYLING ================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-        }
-        .listening { animation: pulse-ring 1.5s infinite; background-color: #ef4444 !important; border-color: #f87171 !important; color: white !important; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0f111a;
+      color: #e2e8f0;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-        /* Audio Waveform Bars */
-        .wave-bar {
-            width: 3px;
-            background: #818cf8;
-            border-radius: 2px;
-            animation: bounce 0.6s ease-in-out infinite alternate;
-        }
-        .wave-bar:nth-child(2) { animation-delay: 0.15s; }
-        .wave-bar:nth-child(3) { animation-delay: 0.3s; }
-        .wave-bar:nth-child(4) { animation-delay: 0.45s; }
-        @keyframes bounce {
-            0% { height: 4px; }
-            100% { height: 16px; }
-        }
-    </style>
+    /* Navigation Bar */
+    header {
+      background: #161822;
+      border-bottom: 1px solid #282a36;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #818cf8;
+      letter-spacing: -0.5px;
+    }
+
+    nav a {
+      color: #94a3b8;
+      text-decoration: none;
+      margin-left: 20px;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: #f8fafc;
+    }
+
+    /* Hero Section */
+    main {
+      flex: 1;
+      max-width: 900px;
+      margin: 80px auto;
+      padding: 0 24px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 2.75rem;
+      line-height: 1.2;
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      font-size: 1.15rem;
+      color: #94a3b8;
+      max-width: 650px;
+      margin: 0 auto 36px auto;
+    }
+
+    .cta-container {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .cta-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .cta-primary {
+      background: #6366f1;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .cta-primary:hover {
+      background: #4f46e5;
+    }
+
+    .cta-secondary {
+      background: #1e2230;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+
+    .cta-secondary:hover {
+      background: #272d40;
+    }
+
+    /* ================= OMNI FLOATING ASSISTANT WIDGET ================= */
+    #omni-widget-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999999;
+      font-family: inherit;
+    }
+
+    /* Floating Bubble Button */
+    #omni-toggle-btn {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #omni-toggle-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.55);
+    }
+
+    /* Assistant Chat Window */
+    #omni-chat-window {
+      position: absolute;
+      bottom: 74px;
+      right: 0;
+      width: 360px;
+      max-width: calc(100vw - 32px);
+      height: 520px;
+      max-height: calc(100vh - 120px);
+      background: #181926;
+      color: #cad3f5;
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    #omni-chat-window.omni-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px) scale(0.96);
+    }
+
+    /* Header */
+    .omni-header {
+      background: #1e2030;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #24273a;
+    }
+
+    .omni-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #cad3f5;
+    }
+
+    .omni-status-dot {
+      width: 8px;
+      height: 8px;
+      background: #a6da95;
+      border-radius: 50%;
+    }
+
+    #omni-close-btn {
+      background: transparent;
+      border: none;
+      color: #939ab7;
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    #omni-close-btn:hover {
+      color: #ffffff;
+    }
+
+    /* Messages Area */
+    .omni-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .omni-bubble {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .omni-bubble.user {
+      align-self: flex-end;
+      background: #6366f1;
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+
+    .omni-bubble.assistant {
+      align-self: flex-start;
+      background: #24273a;
+      color: #cad3f5;
+      border-bottom-left-radius: 2px;
+    }
+
+    /* Status Bar */
+    .omni-status {
+      padding: 4px 16px;
+      font-size: 0.75rem;
+      color: #8087a2;
+      background: #181926;
+    }
+
+    /* Input Bar */
+    .omni-input-bar {
+      display: flex;
+      gap: 6px;
+      padding: 12px;
+      background: #1e2030;
+      border-top: 1px solid #24273a;
+    }
+
+    #omni-input {
+      flex: 1;
+      background: #24273a;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    #omni-input:focus {
+      border-color: #6366f1;
+    }
+
+    .omni-input-bar button {
+      background: #24273a;
+      color: #cad3f5;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.15s ease;
+    }
+
+    .omni-input-bar button:hover {
+      background: #363a4f;
+    }
+
+    #omni-send-btn {
+      background: #6366f1;
+      color: #ffffff;
+    }
+
+    #omni-send-btn:hover {
+      background: #4f46e5;
+    }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen flex flex-col justify-between overflow-hidden">
+<body>
 
-    <!-- Header -->
-    <header class="glass border-b border-slate-800 p-4 flex flex-wrap justify-between items-center gap-3 z-10">
-        <div class="flex items-center space-x-3">
-            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 font-bold text-lg">
-                🤖
-            </div>
-            <div>
-                <h1 class="font-bold text-lg tracking-tight text-white flex items-center gap-2">
-                    OmniAI Studio
-                    <span id="statusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Locked</span>
-                    <span id="deviceBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Device Offline</span>
-                </h1>
-                <p id="subStatus" class="text-xs text-slate-400">Say or type "Hello Omni" to unlock</p>
-            </div>
+  <!-- Webpage Header -->
+  <header>
+    <div class="brand">VEDANT</div>
+    <nav>
+      <a href="#about">About</a>
+      <a href="#projects">Projects</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Hero Content -->
+  <main>
+    <div class="badge">Omni AI Integrated</div>
+    <h1>Welcome to My Project Portal</h1>
+    <p class="subtitle">
+      Explore dynamic tools, game experiments, and artificial intelligence models. Click the floating chat bubble in the bottom right to talk with Omni directly.
+    </p>
+    <div class="cta-container">
+      <button class="cta-btn cta-primary" onclick="toggleOmni()">Talk to Omni</button>
+      <button class="cta-btn cta-secondary" onclick="alert('Explore projects below!')">View Work</button>
+    </div>
+  </main>
+
+  <!-- ================= OMNI ASSISTANT WIDGET ================= -->
+  <div id="omni-widget-container">
+    <!-- Trigger Button -->
+    <button id="omni-toggle-btn" aria-label="Open Omni Assistant">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </button>
+
+    <!-- Chat Window Box -->
+    <div id="omni-chat-window" class="omni-hidden">
+      <div class="omni-header">
+        <div class="omni-title">
+          <span class="omni-status-dot"></span>
+          <span>Omni Assistant</span>
         </div>
+        <button id="omni-close-btn">&times;</button>
+      </div>
 
-        <div class="flex items-center space-x-2">
-            <!-- Audio Activity Visualizer -->
-            <div id="audioWave" class="hidden items-center gap-0.5 h-5 px-2 bg-slate-900 border border-slate-800 rounded-lg">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-            </div>
-
-            <!-- Connect to Device Button -->
-            <button id="connectDeviceBtn" onclick="toggleDeviceConnection()" class="text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-2 rounded-lg transition shadow-md shadow-emerald-600/20">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                <span id="connectDeviceLabel">Connect to Device</span>
-            </button>
-
-            <!-- Stop Generation Button (Dynamic) -->
-            <button id="stopBtn" onclick="stopGeneration()" class="hidden text-xs bg-rose-600/80 hover:bg-rose-500 text-white px-3 py-2 rounded-lg transition border border-rose-500/40">
-                Stop ⏹
-            </button>
-
-            <select id="modelSelect" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-300 focus:outline-none focus:border-indigo-500">
-                <option value="openrouter/free">OpenRouter Auto Free</option>
-                <option value="deepseek/deepseek-r1:free">DeepSeek R1 Free</option>
-                <option value="google/gemma-2-9b-it:free">Google Gemma 2 Free</option>
-            </select>
-            <button onclick="clearChat()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg transition border border-slate-700">Clear</button>
+      <div class="omni-messages" id="omni-messages">
+        <div class="omni-bubble assistant">
+          Hello! I am Omni, your desktop and web AI assistant. How can I help you?
         </div>
-    </header>
+      </div>
 
-    <!-- Chat Messages Container -->
-    <main id="chatContainer" class="chat-container flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-w-4xl w-full mx-auto">
-        <div class="flex items-start space-x-4">
-            <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">AI</div>
-            <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg">
-                <p class="font-semibold text-indigo-400 mb-1">Security Check Required 🔒</p>
-                <p>Welcome to OmniAI Studio Pro! This assistant is locked. Type or say <strong>"Hello Omni"</strong>, or click <strong>"Connect to Device"</strong> to unlock real-time streaming control.</p>
-            </div>
-        </div>
-    </main>
+      <div class="omni-status" id="omni-status">Ready</div>
 
-    <!-- Input Bar -->
-    <footer class="glass border-t border-slate-800 p-4 z-10">
-        <div class="max-w-4xl mx-auto flex items-center space-x-3">
-            <button id="micBtn" onclick="toggleSpeechRecognition()" title="Speak to chat" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-3 rounded-xl transition flex items-center justify-center border border-slate-700 flex-shrink-0">
-                <svg id="micIcon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-            </button>
-            <textarea id="userInput" rows="1" placeholder="Type 'Hello Omni' to activate..." 
-                class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none max-h-32"
-                onkeydown="handleKeyPress(event)" oninput="autoResize(this)"></textarea>
-            <button onclick="sendMessage()" id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition flex items-center justify-center shadow-lg shadow-indigo-600/30 flex-shrink-0">
-                <svg class="w-5 h-5 transform rotate-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-            </button>
-        </div>
-    </footer>
+      <div class="omni-input-bar">
+        <input type="text" id="omni-input" placeholder="Type a message or command..." autocomplete="off" />
+        <button id="omni-mic-btn" title="Speak">&#127908;</button>
+        <button id="omni-send-btn">&#10148;</button>
+      </div>
+    </div>
+  </div>
 
-    <script>
-        // ================= CONFIGURATION =================
-        const API_KEY = "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";
-        const API_URL = "https://openrouter.ai/api/v1/chat/completions";
-        const MAX_HISTORY = 10; // Memory cap to prevent token overflow
-        // =================================================
+  <script>
+    // ⚙️ Backend endpoint: 
+    // If running locally, keep "http://localhost:5000".
+    // When deploying on GitHub Pages, replace with your Cloudflare Tunnel / ngrok URL (e.g. "https://omni-api.yourdomain.com")
+    const BACKEND_URL = "http://localhost:5000";
 
-        let isActivated = false;
-        let isDeviceConnected = false;
-        let localBridgeSocket = null;
-        let continuousListening = false;
-        let recognition = null;
-        let isSpeaking = false;
-        let abortController = null;
+    const chatWindow = document.getElementById("omni-chat-window");
+    const toggleBtn = document.getElementById("omni-toggle-btn");
+    const closeBtn = document.getElementById("omni-close-btn");
+    const messages = document.getElementById("omni-messages");
+    const input = document.getElementById("omni-input");
+    const sendBtn = document.getElementById("omni-send-btn");
+    const micBtn = document.getElementById("omni-mic-btn");
+    const status = document.getElementById("omni-status");
 
-        let conversationHistory = [
-            { 
-                role: "system", 
-                content: "Your name is Omni. You were created by Vedant. Provide concise, clear, and natural answers. Avoid unnecessary markdown syntax or command slashes. If anyone asks 'Who created you?', reply exactly 'I am created by Vedant.'. If anyone asks 'Who are you?', reply exactly 'I am Omni'." 
-            }
-        ];
+    function toggleOmni() {
+      chatWindow.classList.toggle("omni-hidden");
+      if (!chatWindow.classList.contains("omni-hidden")) {
+        input.focus();
+      }
+    }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('omni_device_connected') === 'true') {
-                connectDevice(false);
-            }
+    toggleBtn.addEventListener("click", toggleOmni);
+    closeBtn.addEventListener("click", toggleOmni);
+
+    // Browser Speech Synthesis (Text to Speech)
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Append Message Bubbles
+    function appendMsg(role, text) {
+      const bubble = document.createElement("div");
+      bubble.className = `omni-bubble \${role}`;
+      bubble.textContent = text;
+      messages.appendChild(bubble);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Send Query to Python/Ollama Server
+    async function sendQuery(query) {
+      if (!query.trim()) return;
+      appendMsg("user", query);
+      status.textContent = "Omni is thinking...";
+
+      try {
+        const res = await fetch(`\${BACKEND_URL}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: query }),
         });
 
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        function toggleDeviceConnection() {
-            if (isDeviceConnected) {
-                disconnectDevice();
-            } else {
-                connectDevice(true);
-            }
-        }
-
-        function connectDevice(userInitiated = true) {
-            isDeviceConnected = true;
-            localStorage.setItem('omni_device_connected', 'true');
-
-            isActivated = true;
-            document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-            document.getElementById('statusBadge').innerText = "Active ✨";
-            document.getElementById('subStatus').innerText = "Continuous voice listening active";
-            document.getElementById('userInput').placeholder = "Listening... Say a command or query...";
-
-            const btn = document.getElementById('connectDeviceBtn');
-            btn.className = "text-xs flex items-center gap-1.5 bg-red-600/80 hover:bg-red-500 text-white font-medium px-3 py-2 rounded-lg transition border border-red-500/40";
-            document.getElementById('connectDeviceLabel').innerText = "Disconnect Device";
-
-            const badge = document.getElementById('deviceBadge');
-            badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-            badge.innerText = "Device Linked 🟢";
-
-            initLocalBridgeSocket();
-
-            if (userInitiated) {
-                appendSystemAlert("Omni AI linked to device. Continuous background voice & command listening active.");
-                speakText("Omni AI is connected to your device. I am ready for your commands.");
-            }
-
-            continuousListening = true;
-            startSpeechLoop();
-        }
-
-        function disconnectDevice() {
-            isDeviceConnected = false;
-            continuousListening = false;
-            localStorage.removeItem('omni_device_connected');
-
-            stopGeneration();
-
-            if (recognition) {
-                try { recognition.stop(); } catch(e) {}
-            }
-
-            if (localBridgeSocket) {
-                localBridgeSocket.close();
-                localBridgeSocket = null;
-            }
-
-            const btn = document.getElementById('connectDeviceBtn');
-            btn.className = "text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-2 rounded-lg transition shadow-md shadow-emerald-600/20";
-            document.getElementById('connectDeviceLabel').innerText = "Connect to Device";
-
-            const badge = document.getElementById('deviceBadge');
-            badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700";
-            badge.innerText = "Device Offline";
-            document.getElementById('subStatus').innerText = "Say or type 'Hello Omni' to unlock";
-
-            appendSystemAlert("Omni AI disconnected from device.");
-            speakText("Device disconnected.");
-        }
-
-        function initLocalBridgeSocket() {
-            try {
-                localBridgeSocket = new WebSocket("ws://localhost:9876");
-                localBridgeSocket.onopen = () => console.log("Connected to native OS bridge.");
-                localBridgeSocket.onerror = () => console.log("No OS companion daemon on ws://localhost:9876. Using browser fallbacks.");
-            } catch (err) {
-                console.log("Bridge socket unavailable:", err);
-            }
-        }
-
-        function appendSystemAlert(text) {
-            const chatContainer = document.getElementById('chatContainer');
-            const alertBubble = document.createElement('div');
-            alertBubble.className = "flex items-start space-x-4";
-            alertBubble.innerHTML = `
-                <div class="h-9 w-9 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">⚡</div>
-                <div class="glass border border-emerald-500/40 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg text-emerald-300">
-                    ${escapeHtml(text)}
-                </div>
-            `;
-            chatContainer.appendChild(alertBubble);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function clearChat() {
-            stopGeneration();
-            isActivated = false;
-            document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30";
-            document.getElementById('statusBadge').innerText = "Locked";
-            document.getElementById('userInput').placeholder = "Type 'Hello Omni' to activate...";
-            
-            conversationHistory = [conversationHistory[0]];
-            document.getElementById('chatContainer').innerHTML = `
-                <div class="flex items-start space-x-4">
-                    <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">AI</div>
-                    <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg">
-                        <p class="font-semibold text-indigo-400 mb-1">Security Check Required 🔒</p>
-                        <p>Assistant reset. Type or speak <strong>"Hello Omni"</strong> to activate, or connect to your device.</p>
-                    </div>
-                </div>`;
-        }
-
-        // ================= VOICE LISTENING =================
-        function startSpeechLoop() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (recognition) {
-                try { recognition.abort(); } catch(e) {}
-            }
-
-            recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-
-            const micBtn = document.getElementById('micBtn');
-
-            recognition.onstart = () => {
-                micBtn.classList.add('listening');
-                setAudioWave(true);
-            };
-
-            recognition.onresult = (event) => {
-                if (isSpeaking) return;
-
-                const speechToText = event.results[0][0].transcript.trim();
-                if (speechToText.length > 0) {
-                    document.getElementById('userInput').value = speechToText;
-                    autoResize(document.getElementById('userInput'));
-                    micBtn.classList.remove('listening');
-                    setAudioWave(false);
-                    sendMessage();
-                }
-            };
-
-            recognition.onerror = () => {
-                micBtn.classList.remove('listening');
-                setAudioWave(false);
-            };
-
-            recognition.onend = () => {
-                micBtn.classList.remove('listening');
-                setAudioWave(false);
-                if (continuousListening && isDeviceConnected && !isSpeaking) {
-                    setTimeout(() => {
-                        try { recognition.start(); } catch(e) {}
-                    }, 400);
-                }
-            };
-
-            try { recognition.start(); } catch(e) {}
-        }
-
-        function toggleSpeechRecognition() {
-            if (continuousListening) {
-                continuousListening = false;
-                if (recognition) recognition.stop();
-                document.getElementById('micBtn').classList.remove('listening');
-                setAudioWave(false);
-                return;
-            }
-            continuousListening = true;
-            startSpeechLoop();
-        }
-
-        function setAudioWave(visible) {
-            const wave = document.getElementById('audioWave');
-            if (visible) {
-                wave.classList.remove('hidden');
-                wave.classList.add('flex');
-            } else {
-                wave.classList.add('hidden');
-                wave.classList.remove('flex');
-            }
-        }
-
-        function cleanTextForSpeech(raw) {
-            return raw
-                .replace(/```[\s\S]*?```/g, 'code snippet')
-                .replace(/`([^`]+)`/g, '\$1')
-                .replace(/https?:\/\/\S+/g, 'link')
-                .replace(/[#*_~>]/g, '')
-                .replace(/[-–—/\\|]/g, ' ')
-                .replace(/[[\](){}]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        function speakText(text) {
-            if (!('speechSynthesis' in window)) return;
-
-            window.speechSynthesis.cancel();
-            const cleanText = cleanTextForSpeech(text);
-            if (!cleanText) return;
-
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            utterance.rate = 1.0;
-
-            isSpeaking = true;
-            setAudioWave(true);
-            if (recognition) {
-                try { recognition.abort(); } catch(e) {}
-            }
-
-            utterance.onend = () => {
-                isSpeaking = false;
-                setAudioWave(false);
-                if (continuousListening && isDeviceConnected) {
-                    setTimeout(() => startSpeechLoop(), 300);
-                }
-            };
-
-            utterance.onerror = () => {
-                isSpeaking = false;
-                setAudioWave(false);
-                if (continuousListening && isDeviceConnected) {
-                    setTimeout(() => startSpeechLoop(), 300);
-                }
-            };
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function stopGeneration() {
-            if (abortController) {
-                abortController.abort();
-                abortController = null;
-            }
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-            isSpeaking = false;
-            setAudioWave(false);
-            document.getElementById('stopBtn').classList.add('hidden');
-            document.getElementById('sendBtn').disabled = false;
-        }
-
-        // ================= DEVICE COMMAND HANDLER =================
-        function handleDeviceCommand(rawText) {
-            const cmd = rawText.toLowerCase().trim();
-
-            if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
-                localBridgeSocket.send(JSON.stringify({ action: "execute", command: cmd }));
-            }
-
-            if (cmd.includes("open notepad")) {
-                if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
-                    return "Opening Notepad on your computer.";
-                }
-                window.open("https://notepad.new", "_blank");
-                return "Opening online notepad in a new tab.";
-            }
-
-            if (cmd.includes("open google")) {
-                window.open("https://www.google.com", "_blank");
-                return "Opening Google.";
-            }
-
-            if (cmd.includes("open youtube")) {
-                window.open("https://www.youtube.com", "_blank");
-                return "Opening YouTube.";
-            }
-
-            if (cmd.includes("close the computer") || cmd.includes("shutdown") || cmd.includes("turn off pc")) {
-                if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
-                    return "Shutdown command dispatched to your system.";
-                }
-                return "Browser security restricts OS-level shutdown without a native companion script.";
-            }
-
-            return null;
-        }
-
-        // Format Markdown and add Copy Code blocks
-        function formatMarkdown(content) {
-            let html = marked.parse(content);
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-
-            doc.querySelectorAll('pre').forEach((pre, idx) => {
-                const code = pre.querySelector('code');
-                const codeText = code ? code.innerText : pre.innerText;
-                const langMatch = code ? code.className.match(/language-(\w+)/) : null;
-                const lang = langMatch ? langMatch[1] : 'code';
-
-                const wrapper = document.createElement('div');
-                wrapper.className = 'code-wrapper';
-                wrapper.innerHTML = `
-                    <div class="code-header">
-                        <span>${lang}</span>
-                        <button class="code-copy-btn" onclick="copySnippet(this)">Copy</button>
-                    </div>
-                `;
-                pre.parentNode.insertBefore(wrapper, pre);
-                wrapper.appendChild(pre);
-            });
-
-            return doc.body.innerHTML;
-        }
-
-        function copySnippet(button) {
-            const wrapper = button.closest('.code-wrapper');
-            const pre = wrapper.querySelector('pre');
-            const code = pre.querySelector('code') || pre;
-            navigator.clipboard.writeText(code.innerText).then(() => {
-                button.innerText = "Copied!";
-                setTimeout(() => button.innerText = "Copy", 2000);
-            });
-        }
-
-        // ================= REAL-TIME STREAMING API FLOW =================
-        async function sendMessage() {
-            const inputField = document.getElementById('userInput');
-            const sendBtn = document.getElementById('sendBtn');
-            const stopBtn = document.getElementById('stopBtn');
-            const chatContainer = document.getElementById('chatContainer');
-            const modelSelect = document.getElementById('modelSelect').value;
-            
-            const text = inputField.value.trim();
-            if (!text) return;
-
-            inputField.value = '';
-            inputField.style.height = 'auto';
-
-            // Activation Check
-            if (!isActivated) {
-                if (text.toLowerCase().includes("hello omni") || text.toLowerCase().includes("hey omni")) {
-                    isActivated = true;
-                    document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-                    document.getElementById('statusBadge').innerText = "Active ✨";
-                    document.getElementById('userInput').placeholder = "Type or speak in any language...";
-
-                    appendUserBubble(chatContainer, text);
-                    appendAiResponse(chatContainer, "Activation successful! 🚀 OmniAI Studio is now unlocked.");
-                    speakText("Activation successful. OmniAI Studio is now online.");
-                    return;
-                } else {
-                    appendUserBubble(chatContainer, text);
-                    appendAiResponse(chatContainer, "⚠️ Please say or type 'Hello Omni' (or click 'Connect to Device') to unlock.");
-                    return;
-                }
-            }
-
-            appendUserBubble(chatContainer, text);
-
-            // 1. Device Command Handling
-            if (isDeviceConnected) {
-                const deviceResponse = handleDeviceCommand(text);
-                if (deviceResponse) {
-                    appendAiResponse(chatContainer, deviceResponse);
-                    speakText(deviceResponse);
-                    return;
-                }
-            }
-
-            // 2. Identity Check
-            const lowerInput = text.toLowerCase().trim().replace(/[?!.,]/g, '');
-            if (lowerInput === "who created you" || lowerInput === "who made you") {
-                const customReply = "I am created by Vedant.";
-                appendAiResponse(chatContainer, customReply);
-                conversationHistory.push({ role: "user", content: text }, { role: "assistant", content: customReply });
-                speakText(customReply);
-                return;
-            }
-
-            if (lowerInput === "who are you" || lowerInput === "what is your name") {
-                const customReply = "I am Omni";
-                appendAiResponse(chatContainer, customReply);
-                conversationHistory.push({ role: "user", content: text }, { role: "assistant", content: customReply });
-                speakText(customReply);
-                return;
-            }
-
-            // 3. Conversation Memory Pruning (Token Saver)
-            conversationHistory.push({ role: "user", content: text });
-            if (conversationHistory.length > MAX_HISTORY + 1) {
-                conversationHistory = [conversationHistory[0], ...conversationHistory.slice(-MAX_HISTORY)];
-            }
-
-            // Streaming Bubble Container
-            const aiBubbleId = 'ai-msg-' + Date.now();
-            const aiBubble = document.createElement('div');
-            aiBubble.className = "flex items-start space-x-4";
-            aiBubble.innerHTML = `
-                <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">AI</div>
-                <div id="${aiBubbleId}" class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg message-content text-slate-300">
-                    <span class="inline-block animate-pulse">Thinking...</span>
-                </div>
-            `;
-            chatContainer.appendChild(aiBubble);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-
-            sendBtn.disabled = true;
-            stopBtn.classList.remove('hidden');
-
-            abortController = new AbortController();
-            let accumulatedReply = "";
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${API_KEY}`,
-                        'HTTP-Referer': window.location.origin || 'http://localhost',
-                        'X-Title': 'OmniAI Studio',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: modelSelect,
-                        messages: conversationHistory,
-                        stream: true
-                    }),
-                    signal: abortController.signal
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error?.message || `HTTP ${response.status}`);
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder("utf-8");
-                const targetDiv = document.getElementById(aiBubbleId);
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split("\n");
-
-                    for (const line of lines) {
-                        const trimmed = line.trim();
-                        if (trimmed.startsWith("data: ")) {
-                            const dataPayload = trimmed.replace("data: ", "").trim();
-                            if (dataPayload === "[DONE]") continue;
-
-                            try {
-                                const parsed = JSON.parse(dataPayload);
-                                const token = parsed.choices?.[0]?.delta?.content || "";
-                                if (token) {
-                                    accumulatedReply += token;
-                                    targetDiv.innerHTML = formatMarkdown(accumulatedReply);
-                                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                                }
-                            } catch (e) {
-                                // Ignore partial SSE chunk parses
-                            }
-                        }
-                    }
-                }
-
-                if (accumulatedReply) {
-                    conversationHistory.push({ role: "assistant", content: accumulatedReply });
-                    speakText(accumulatedReply);
-                }
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    document.getElementById(aiBubbleId).innerHTML += `<p class="text-xs text-slate-500 italic mt-2">[Generation stopped by user]</p>`;
-                } else {
-                    document.getElementById(aiBubbleId).innerHTML = `<span class="text-red-400">Error: ${escapeHtml(error.message)}</span>`;
-                }
-            } finally {
-                sendBtn.disabled = false;
-                stopBtn.classList.add('hidden');
-                abortController = null;
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
-
-        function appendUserBubble(container, text) {
-            const userBubble = document.createElement('div');
-            userBubble.className = "flex items-start justify-end space-x-4";
-            userBubble.innerHTML = `
-                <div class="bg-indigo-600 text-white rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg message-content">
-                    ${escapeHtml(text)}
-                </div>
-                <div class="h-9 w-9 rounded-full bg-slate-700 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">You</div>
-            `;
-            container.appendChild(userBubble);
-            container.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function appendAiResponse(container, text) {
-            const aiBubble = document.createElement('div');
-            aiBubble.className = "flex items-start space-x-4";
-            aiBubble.innerHTML = `
-                <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">AI</div>
-                <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg message-content text-slate-100">
-                    ${formatMarkdown(text)}
-                </div>
-            `;
-            container.appendChild(aiBubble);
-            container.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-    </script>
+        const data = await res.json();
+        appendMsg("assistant", data.reply);
+        speak(data.reply);
+        status.textContent = "Ready";
+      } catch (err) {
+        appendMsg("assistant", "Could not reach backend server. Make sure omni_server.py is running!");
+        status.textContent = "Offline";
+      }
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const val = input.value.trim();
+      if (val) {
+        sendQuery(val);
+        input.value = "";
+      }
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendBtn.click();
+    });
+
+    // Browser Speech Recognition (Voice to Text)
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      const recognizer = new SpeechRec();
+      recognizer.lang = "en-US";
+      recognizer.onstart = () => { status.textContent = "Listening... Speak now"; };
+      recognizer.onspeechend = () => { status.textContent = "Processing speech..."; recognizer.stop(); };
+      recognizer.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        sendQuery(text);
+      };
+      recognizer.onerror = () => { status.textContent = "Mic error or silence detected."; };
+      micBtn.addEventListener("click", () => recognizer.start());
+    } else {
+      micBtn.style.display = "none";
+    }
+  </script>
 </body>
 </html>
