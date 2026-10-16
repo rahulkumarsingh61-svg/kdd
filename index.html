@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniAI Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 4px; }
+        .message-content pre { background: #0f172a; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-top: 0.5rem; }
+        .message-content code { font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+        .message-content pre code { background: transparent; padding: 0; }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        .listening { animation: pulse-ring 1.5s infinite; background-color: #ef4444 !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col justify-between overflow-hidden">
+
+    <!-- Header -->
+    <header class="glass border-b border-slate-800 p-4 flex flex-wrap justify-between items-center gap-3 z-10">
+        <div class="flex items-center space-x-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 font-bold text-lg">
+                🤖
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-tight text-white flex items-center gap-2">
+                    OmniAI Studio 
+                    <span id="statusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Locked</span>
+                    <span id="deviceBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Device Offline</span>
+                </h1>
+                <p class="text-xs text-slate-400">Say or type "Hello Omni" to unlock</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <!-- Connect to Device Button -->
+            <button id="connectDeviceBtn" onclick="toggleDeviceConnection()" class="text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-2 rounded-lg transition shadow-md shadow-emerald-600/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <span id="connectDeviceLabel">Connect to Device</span>
+            </button>
+
+            <select id="modelSelect" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="openrouter/free">OpenRouter Free Auto-Router (Best)</option>
+                <option value="deepseek/deepseek-r1:free">DeepSeek R1 Free</option>
+                <option value="google/gemma-2-9b-it:free">Google Gemma 2 Free</option>
+            </select>
+            <button onclick="clearChat()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg transition border border-slate-700">Clear</button>
+        </div>
+    </header>
+
+    <!-- Chat Messages Container -->
+    <main id="chatContainer" class="chat-container flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-w-4xl w-full mx-auto">
+        <div class="flex items-start space-x-4">
+            <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">AI</div>
+            <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg">
+                <p class="font-semibold text-indigo-400 mb-1">Security Check Required 🔒</p>
+                <p>Welcome to OmniAI Studio! This assistant is currently locked. To activate it, type or speak <strong>"Hello Omni"</strong>, or click <strong>"Connect to Device"</strong> above.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Bar -->
+    <footer class="glass border-t border-slate-800 p-4 z-10">
+        <div class="max-w-4xl mx-auto flex items-center space-x-3">
+            <button id="micBtn" onclick="toggleSpeechRecognition()" title="Speak to activate or chat" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-3 rounded-xl transition flex items-center justify-center border border-slate-700 flex-shrink-0">
+                <svg id="micIcon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+            </button>
+            <textarea id="userInput" rows="1" placeholder="Type 'Hello Omni' to activate..." 
+                class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none max-h-32"
+                onkeydown="handleKeyPress(event)" oninput="autoResize(this)"></textarea>
+            <button onclick="sendMessage()" id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition flex items-center justify-center shadow-lg shadow-indigo-600/30 flex-shrink-0">
+                <svg class="w-5 h-5 transform rotate-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        const API_KEY = "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";
+        const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+        
+        let isActivated = false;
+        let isDeviceConnected = false;
+        let localBridgeSocket = null;
+        let continuousListening = false;
+        let recognition = null;
+
+        let conversationHistory = [
+            { 
+                role: "system", 
+                content: "Your name is Omni. You were created by Vedant. Always answer accurately in whatever language the user speaks. If anyone asks 'Who created you?', reply exactly 'I am created by Vedant.'. If anyone asks 'Who are you?', reply exactly 'I am Omni'." 
+            }
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Restore persistent connection from local storage
+            if (localStorage.getItem('omni_device_connected') === 'true') {
+                connectDevice(false);
+            }
+        });
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function toggleDeviceConnection() {
+            if (isDeviceConnected) {
+                disconnectDevice();
+            } else {
+                connectDevice(true);
+            }
+        }
+
+        function connectDevice(userInitiated = true) {
+            isDeviceConnected = true;
+            localStorage.setItem('omni_device_connected', 'true');
+
+            // Auto-unlock AI when device connects
+            isActivated = true;
+            document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            document.getElementById('statusBadge').innerText = "Active ✨";
+            document.getElementById('userInput').placeholder = "Device connected! Speak or type your request...";
+
+            // Update Connection button
+            const btn = document.getElementById('connectDeviceBtn');
+            btn.className = "text-xs flex items-center gap-1.5 bg-red-600/80 hover:bg-red-500 text-white font-medium px-3 py-2 rounded-lg transition border border-red-500/40";
+            document.getElementById('connectDeviceLabel').innerText = "Disconnect Device";
+
+            // Update Device badge
+            const badge = document.getElementById('deviceBadge');
+            badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            badge.innerText = "Device Linked 🟢";
+
+            // Establish Local Bridge Socket (for native OS commands like opening Notepad, Shutting Down)
+            initLocalBridgeSocket();
+
+            if (userInitiated) {
+                appendSystemAlert("Omni AI is connected now. Device link is permanently active until disconnected. Continuous listening is enabled.");
+                speakText("Omni AI is connected to your device now. I am listening for your commands.");
+            }
+
+            // Start hands-free voice loop
+            continuousListening = true;
+            startSpeechLoop();
+        }
+
+        function disconnectDevice() {
+            isDeviceConnected = false;
+            continuousListening = false;
+            localStorage.removeItem('omni_device_connected');
+
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
+
+            if (localBridgeSocket) {
+                localBridgeSocket.close();
+                localBridgeSocket = null;
+            }
+
+            // Reset UI
+            const btn = document.getElementById('connectDeviceBtn');
+            btn.className = "text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-2 rounded-lg transition shadow-md shadow-emerald-600/20";
+            document.getElementById('connectDeviceLabel').innerText = "Connect to Device";
+
+            const badge = document.getElementById('deviceBadge');
+            badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700";
+            badge.innerText = "Device Offline";
+
+            appendSystemAlert("Omni AI has been disconnected from your device.");
+            speakText("Device disconnected.");
+        }
+
+        function initLocalBridgeSocket() {
+            try {
+                // Connects to an optional local agent running at ws://localhost:9876
+                localBridgeSocket = new WebSocket("ws://localhost:9876");
+                localBridgeSocket.onopen = () => {
+                    console.log("Connected to native OS companion bridge.");
+                };
+                localBridgeSocket.onerror = () => {
+                    // Normal in pure browser environment
+                    console.log("No native desktop daemon running on ws://localhost:9876. Using browser-level fallbacks.");
+                };
+            } catch (err) {
+                console.log("Bridge socket unavailable:", err);
+            }
+        }
+
+        function appendSystemAlert(text) {
+            const chatContainer = document.getElementById('chatContainer');
+            const alertBubble = document.createElement('div');
+            alertBubble.className = "flex items-start space-x-4";
+            alertBubble.innerHTML = `
+                <div class="h-9 w-9 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">⚡</div>
+                <div class="glass border border-emerald-500/40 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg text-emerald-300">
+                    \${escapeHtml(text)}
+                </div>
+            `;
+            chatContainer.appendChild(alertBubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function clearChat() {
+            isActivated = false;
+            document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30";
+            document.getElementById('statusBadge').innerText = "Locked";
+            document.getElementById('userInput').placeholder = "Type 'Hello Omni' to activate...";
+            
+            conversationHistory = [conversationHistory[0]];
+            document.getElementById('chatContainer').innerHTML = `
+                <div class="flex items-start space-x-4">
+                    <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-md">AI</div>
+                    <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg">
+                        <p class="font-semibold text-indigo-400 mb-1">Security Check Required 🔒</p>
+                        <p>Assistant reset. Type or speak <strong>"Hello Omni"</strong> to activate, or connect to device.</p>
+                    </div>
+                </div>`;
+        }
+
+        // Voice Recognition
+        function startSpeechLoop() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            const micBtn = document.getElementById('micBtn');
+
+            recognition.onstart = () => {
+                micBtn.classList.add('listening');
+            };
+
+            recognition.onresult = (event) => {
+                const speechToText = event.results[0][0].transcript;
+                document.getElementById('userInput').value = speechToText;
+                autoResize(document.getElementById('userInput'));
+                micBtn.classList.remove('listening');
+                sendMessage();
+            };
+
+            recognition.onerror = () => {
+                micBtn.classList.remove('listening');
+            };
+
+            recognition.onend = () => {
+                micBtn.classList.remove('listening');
+                // If device remains connected, restart listening for persistent hands-free control
+                if (continuousListening && isDeviceConnected) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e) {}
+                    }, 800);
+                }
+            };
+
+            try { recognition.start(); } catch(e) {}
+        }
+
+        function toggleSpeechRecognition() {
+            if (continuousListening) {
+                continuousListening = false;
+                if (recognition) recognition.stop();
+                return;
+            }
+            startSpeechLoop();
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const cleanText = text.replace(/[*#_`]/g, '');
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Handle Device Command Execution
+        function handleDeviceCommand(rawText) {
+            const cmd = rawText.toLowerCase().trim();
+
+            // Forward to native bridge if present
+            if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
+                localBridgeSocket.send(JSON.stringify({ action: "execute", command: cmd }));
+            }
+
+            // Browser-executable controls
+            if (cmd.includes("open notepad")) {
+                if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
+                    return "Opening Notepad on your computer via local bridge.";
+                }
+                // Browser alternative: open an in-browser notepad
+                window.open("https://notepad.new", "_blank");
+                return "Browser security restricts launching local .exe directly without a native helper. Opened an online notepad tab for you!";
+            }
+
+            if (cmd.includes("open google")) {
+                window.open("https://www.google.com", "_blank");
+                return "Opening Google.";
+            }
+
+            if (cmd.includes("open youtube")) {
+                window.open("https://www.youtube.com", "_blank");
+                return "Opening YouTube.";
+            }
+
+            if (cmd.includes("close the computer") || cmd.includes("shutdown") || cmd.includes("turn off pc")) {
+                if (localBridgeSocket && localBridgeSocket.readyState === WebSocket.OPEN) {
+                    return "Shutdown command dispatched to your PC via local daemon.";
+                }
+                return "Browsers cannot directly shut down your PC due to operating system sandbox restrictions. Run the accompanying local bridge script to enable OS-level shutdown.";
+            }
+
+            return null; // Not a direct device command; proceed to LLM
+        }
+
+        async function sendMessage() {
+            const inputField = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const chatContainer = document.getElementById('chatContainer');
+            const modelSelect = document.getElementById('modelSelect').value;
+            
+            const text = inputField.value.trim();
+            if (!text) return;
+
+            inputField.value = '';
+            inputField.style.height = 'auto';
+
+            // Activation Check
+            if (!isActivated) {
+                if (text.toLowerCase().includes("hello omni")) {
+                    isActivated = true;
+                    document.getElementById('statusBadge').className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                    document.getElementById('statusBadge').innerText = "Active ✨";
+                    document.getElementById('userInput').placeholder = "Type message in any language...";
+
+                    appendUserBubble(chatContainer, text);
+                    appendAiResponse(chatContainer, "Activation successful! 🚀 OmniAI Studio is now active and ready for your queries.");
+                    speakText("Activation successful. OmniAI Studio is now online.");
+                    return;
+                } else {
+                    appendUserBubble(chatContainer, text);
+                    appendAiResponse(chatContainer, "⚠️ Please type or speak 'Hello Omni' (or click 'Connect to Device') to activate the AI.");
+                    return;
+                }
+            }
+
+            appendUserBubble(chatContainer, text);
+
+            // 1. Check if it's a device command while connected
+            if (isDeviceConnected) {
+                const deviceResponse = handleDeviceCommand(text);
+                if (deviceResponse) {
+                    appendAiResponse(chatContainer, deviceResponse);
+                    speakText(deviceResponse);
+                    return;
+                }
+            }
+
+            // 2. Identity Rule Checks
+            const lowerInput = text.toLowerCase().trim().replace(/[?!.,]/g, '');
+            if (lowerInput === "who created you" || lowerInput === "who made you") {
+                const customReply = "I am created by Vedant.";
+                appendAiResponse(chatContainer, customReply);
+                conversationHistory.push({ role: "user", content: text }, { role: "assistant", content: customReply });
+                speakText(customReply);
+                return;
+            }
+
+            if (lowerInput === "who are you" || lowerInput === "what is your name") {
+                const customReply = "I am Omni";
+                appendAiResponse(chatContainer, customReply);
+                conversationHistory.push({ role: "user", content: text }, { role: "assistant", content: customReply });
+                speakText(customReply);
+                return;
+            }
+
+            // 3. Normal API Query
+            conversationHistory.push({ role: "user", content: text });
+
+            const aiBubbleId = 'ai-msg-' + Date.now();
+            const aiBubble = document.createElement('div');
+            aiBubble.className = "flex items-start space-x-4";
+            aiBubble.innerHTML = `
+                <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">AI</div>
+                <div id="${aiBubbleId}" class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg message-content text-slate-300">
+                    <span class="inline-block animate-pulse">Thinking...</span>
+                </div>
+            `;
+            chatContainer.appendChild(aiBubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            sendBtn.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'HTTP-Referer': window.location.origin || 'http://localhost',
+                        'X-Title': 'OmniAI Studio',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: modelSelect,
+                        messages: conversationHistory
+                    })
+                });
+
+                const data = await response.json();
+                let reply = "";
+                if (data.choices && data.choices[0]) {
+                    if (data.choices[0].message && data.choices[0].message.content) {
+                        reply = data.choices[0].message.content;
+                    } else if (data.choices[0].delta && data.choices[0].delta.content) {
+                        reply = data.choices[0].delta.content;
+                    }
+                }
+
+                if (reply) {
+                    conversationHistory.push({ role: "assistant", content: reply });
+                    document.getElementById(aiBubbleId).innerHTML = marked.parse(reply);
+                    speakText(reply);
+                } else if (data.error) {
+                    document.getElementById(aiBubbleId).innerHTML = `<span class="text-red-400">API Error: ${escapeHtml(data.error.message || JSON.stringify(data.error))}</span>`;
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById(aiBubbleId).innerHTML = `<span class="text-red-400">Connection Error. Check network or API quota.</span>`;
+            } finally {
+                sendBtn.disabled = false;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        function appendUserBubble(container, text) {
+            const userBubble = document.createElement('div');
+            userBubble.className = "flex items-start justify-end space-x-4";
+            userBubble.innerHTML = `
+                <div class="bg-indigo-600 text-white rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg message-content">
+                    ${escapeHtml(text)}
+                </div>
+                <div class="h-9 w-9 rounded-full bg-slate-700 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">You</div>
+            `;
+            container.appendChild(userBubble);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function appendAiResponse(container, text) {
+            const aiBubble = document.createElement('div');
+            aiBubble.className = "flex items-start space-x-4";
+            aiBubble.innerHTML = `
+                <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md">AI</div>
+                <div class="glass border border-slate-800 rounded-2xl p-4 max-w-[85%] sm:max-w-xl text-sm leading-relaxed shadow-lg message-content text-slate-100">
+                    ${escapeHtml(text)}
+                </div>
+            `;
+            container.appendChild(aiBubble);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
