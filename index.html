@@ -21,7 +21,6 @@
       overflow-x: hidden;
     }
 
-    /* Header */
     header {
       display: flex;
       justify-content: space-between;
@@ -114,7 +113,6 @@
       background: #1f2937;
     }
 
-    /* Chat Area */
     main {
       flex: 1;
       display: flex;
@@ -192,7 +190,6 @@
       color: #f8fafc;
     }
 
-    /* Footer & Controls */
     footer {
       padding: 16px 20px 24px;
       display: flex;
@@ -276,9 +273,9 @@
 
     <div class="header-actions">
       <select id="model-select" class="model-picker">
-        <option value="meta-llama/llama-3.2-3b-instruct:free">OpenRouter Free Auto-Router (Best)</option>
-        <option value="deepseek/deepseek-r1:free">DeepSeek R1 Free</option>
+        <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B Free</option>
         <option value="google/gemma-2-9b-it:free">Google Gemma 2 Free</option>
+        <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Free</option>
       </select>
       <button class="btn-clear" onclick="clearConversation()">Clear</button>
     </div>
@@ -308,6 +305,9 @@
     const OPENROUTER_API_KEY = "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";
 
     let isLocked = true;
+    let awaitingName = false;
+    let userName = "";
+
     const chatStream = document.getElementById("chat-stream");
     const userInput = document.getElementById("user-input");
     const statusBadge = document.getElementById("status-badge");
@@ -362,7 +362,7 @@
       if (isLocked) {
         addMessage("Welcome to OmniAI Studio! This assistant is currently locked. To activate it and start chatting in any language, please type or speak 'Hello Omni'.", "ai", "Security Check Required 🔒");
       } else {
-        addMessage("Conversation cleared. How can I assist you?", "ai");
+        addMessage(`Conversation cleared. How can I assist you${userName ? ', ' + userName : ''}?`, "ai");
       }
     }
 
@@ -375,15 +375,17 @@
 
       const clean = rawText.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, "").trim();
 
-      // Check security lock
+      // State 1: Locked
       if (isLocked) {
         if (clean.includes("hello omni")) {
           isLocked = false;
+          awaitingName = true;
           statusBadge.textContent = "Unlocked";
           statusBadge.className = "badge unlocked";
           statusSub.textContent = "OmniAI Studio is active and ready";
-          userInput.placeholder = "Ask Omni anything...";
-          const unlockReply = "Omni unlocked! Hello Vedant, how can I help you today?";
+          userInput.placeholder = "Please enter your name...";
+          
+          const unlockReply = "Omni unlocked! May I know your name?";
           addMessage(unlockReply, "ai", "Access Granted 🔓");
           speak(unlockReply);
         } else {
@@ -394,9 +396,22 @@
         return;
       }
 
-      // Persona hard checks
+      // State 2: Capture Name
+      if (awaitingName) {
+        userName = rawText.replace(/my name is|i am|this is|call me/gi, "").trim();
+        if (!userName) userName = rawText;
+        awaitingName = false;
+        userInput.placeholder = "Ask Omni anything...";
+
+        const greeting = `Hello ${userName}, how can I help you today?`;
+        addMessage(greeting, "ai");
+        speak(greeting);
+        return;
+      }
+
+      // Hardcoded persona responses
       if (clean.includes("who created you")) {
-        const rep = "I was created by Vedant.";
+        const rep = "I was created by Rahul.";
         addMessage(rep, "ai");
         speak(rep);
         return;
@@ -408,7 +423,7 @@
         return;
       }
 
-      // API Call to OpenRouter
+      // Call OpenRouter
       const thinkingEl = addMessage("...", "ai");
 
       try {
@@ -416,14 +431,16 @@
           method: "POST",
           headers: {
             "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "OmniAI Studio"
           },
           body: JSON.stringify({
             model: modelSelect.value,
             messages: [
               {
                 role: "system",
-                content: "Your name is Omni, created by Vedant. Provide concise, accurate, and conversational answers in 1 to 2 sentences without markdown formatting."
+                content: `Your name is Omni. You are speaking with ${userName || 'the user'}. Provide concise, helpful answers in 1 to 2 sentences.`
               },
               { role: "user", content: rawText }
             ]
@@ -431,11 +448,18 @@
         });
 
         const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content || "No response received.";
+
+        if (!response.ok || data.error) {
+          const errDetail = data.error?.message || `HTTP ${response.status}: Failed to get response.`;
+          thinkingEl.textContent = `API Notice: ${errDetail}`;
+          return;
+        }
+
+        const reply = data.choices?.[0]?.message?.content || "No response content from model.";
         thinkingEl.textContent = reply;
         speak(reply);
       } catch (err) {
-        thinkingEl.textContent = "Error communicating with AI service.";
+        thinkingEl.textContent = "Network error: Unable to reach OpenRouter.";
       }
     }
 
